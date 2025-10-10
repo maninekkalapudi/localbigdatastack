@@ -1,0 +1,215 @@
+version: '3.8'
+
+services:
+  config-init:
+    image: busybox
+    container_name: config-init
+    volumes:
+      - ./config/hadoop:/tmp/hadoop_config:ro
+      - hadoop_config:/config
+    command: sh -c "cp -r /tmp/hadoop_config/* /config/"
+
+  namenode:
+    image: apache/hadoop:3.3.6
+    container_name: namenode
+    hostname: namenode
+    user: "0:0"
+    entrypoint: bash
+    command: >
+      -c "
+        if [ ! -d /opt/hadoop/dfs/name/current ]; then
+          hdfs namenode -format;
+        fi;
+        /usr/local/bin/dumb-init -- /opt/starter.sh hdfs namenode
+      "
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    volumes:
+      - hadoop_config:/opt/hadoop/etc/hadoop
+      - namenode_data:/opt/hadoop/dfs/name
+      - ../examples:/opt/hadoop/examples
+    env_file:
+      - ./config/hadoop.env
+    networks:
+      - hadoop_network
+
+  datanode1:
+    image: apache/hadoop:3.3.6
+    container_name: datanode1
+    hostname: datanode1
+    user: "0:0"
+    command: ["hdfs", "datanode"]
+    volumes:
+      - hadoop_config:/opt/hadoop/etc/hadoop
+      - datanode1_data:/opt/hadoop/dfs/data
+    env_file:
+      - ./config/hadoop.env
+    networks:
+      - hadoop_network
+    depends_on:
+      - namenode
+
+  datanode2:
+    image: apache/hadoop:3.3.6
+    container_name: datanode2
+    hostname: datanode2
+    user: "0:0"
+    command: ["hdfs", "datanode"]
+    volumes:
+      - hadoop_config:/opt/hadoop/etc/hadoop
+      - datanode2_data:/opt/hadoop/dfs/data
+    env_file:
+      - ./config/hadoop.env
+    networks:
+      - hadoop_network
+    depends_on:
+      - namenode
+
+  resourcemanager:
+    image: apache/hadoop:3.3.6
+    container_name: resourcemanager
+    hostname: resourcemanager
+    user: "0:0"
+    command: ["yarn", "resourcemanager"]
+    ports:
+      - "8088:8088"
+    volumes:
+      - hadoop_config:/opt/hadoop/etc/hadoop
+    env_file:
+      - ./config/hadoop.env
+    networks:
+      - hadoop_network
+
+  nodemanager1:
+    image: apache/hadoop:3.3.6
+    container_name: nodemanager1
+    hostname: nodemanager1
+    user: "0:0"
+    command: ["yarn", "nodemanager"]
+    volumes:
+      - hadoop_config:/opt/hadoop/etc/hadoop
+    env_file:
+      - ./config/hadoop.env
+    networks:
+      - hadoop_network
+    depends_on:
+      - resourcemanager
+
+  nodemanager2:
+    image: apache/hadoop:3.3.6
+    container_name: nodemanager2
+    hostname: nodemanager2
+    user: "0:0"
+    command: ["yarn", "nodemanager"]
+    volumes:
+      - hadoop_config:/opt/hadoop/etc/hadoop
+    env_file:
+      - ./config/hadoop.env
+    networks:
+      - hadoop_network
+    depends_on:
+      - resourcemanager
+
+  historyserver:
+    image: apache/hadoop:3.3.6
+    container_name: historyserver
+    hostname: historyserver
+    user: "0:0"
+    command: ["mapred", "historyserver"]
+    ports:
+      - "8188:8188"
+    volumes:
+      - hadoop_config:/opt/hadoop/etc/hadoop
+    env_file:
+      - ./config/hadoop.env
+    networks:
+      - hadoop_network
+
+  postgres:
+    image: postgres:12
+    container_name: postgres
+    hostname: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=metastore
+      - POSTGRES_USER=hive
+      - POSTGRES_PASSWORD=hive
+    volumes:
+      - ./config/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - hadoop_network
+
+  hive-metastore:
+    image: apache/hive:4.0.0
+    container_name: hive-metastore
+    hostname: hive-metastore
+    command: /opt/hive/bin/hive --service metastore
+    environment:
+      - SERVICE_NAME=metastore
+    volumes:
+      - hadoop_config:/opt/hadoop/conf
+    networks:
+      - hadoop_network
+    depends_on:
+      - postgres
+
+  hive-server:
+    image: apache/hive:4.0.0
+    container_name: hive-server
+    hostname: hive-server
+    command: /opt/hive/bin/hive --service hiveserver2
+    ports:
+      - "10000:10000"
+    environment:
+      - SERVICE_NAME=hiveserver2
+    volumes:
+      - hadoop_config:/opt/hadoop/conf
+      - ../examples:/opt/hive/examples
+    networks:
+      - hadoop_network
+    depends_on:
+      - hive-metastore
+
+  datanucleus-init:
+    image: apache/hive:4.0.0
+    container_name: datanucleus-init
+    hostname: datanucleus-init
+    command: /opt/hive/bin/schematool -dbType postgres -initSchema
+    volumes:
+      - hadoop_config:/opt/hadoop/conf
+    networks:
+      - hadoop_network
+    depends_on:
+      - postgres
+
+  spark:
+    image: spark:3.5.6
+    container_name: spark
+    hostname: spark
+    user: "0:0"
+    command: sleep infinity
+    environment:
+      - HADOOP_CONF_DIR=/opt/hadoop/conf
+      - PATH=/opt/hadoop/bin:/opt/spark/bin:/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    volumes:
+      - hadoop_config:/opt/hadoop/conf
+      - ../examples:/opt/spark/examples
+    networks:
+      - hadoop_network
+    depends_on:
+      - namenode
+      - resourcemanager
+
+networks:
+  hadoop_network:
+    driver: bridge
+
+volumes:
+  namenode_data:
+  datanode1_data:
+  datanode2_data:
+  postgres-data:
+  hadoop_config:
