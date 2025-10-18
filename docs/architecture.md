@@ -49,20 +49,20 @@ graph TD
     
     hive_server --> resourcemanager
     
-    style namenode fill:#f9f,stroke:#333,stroke-width:2px
-    style datanode1 fill:#f9f,stroke:#333,stroke-width:2px
-    style datanode2 fill:#f9f,stroke:#333,stroke-width:2px
+    style namenode fill:#939,stroke:#aaa,stroke-width:2px
+    style datanode1 fill:#939,stroke:#aaa,stroke-width:2px
+    style datanode2 fill:#939,stroke:#aaa,stroke-width:2px
     
-    style resourcemanager fill:#ccf,stroke:#333,stroke-width:2px
-    style nodemanager1 fill:#ccf,stroke:#333,stroke-width:2px
-    style nodemanager2 fill:#ccf,stroke:#333,stroke-width:2px
+    style resourcemanager fill:#669,stroke:#aaa,stroke-width:2px
+    style nodemanager1 fill:#669,stroke:#aaa,stroke-width:2px
+    style nodemanager2 fill:#669,stroke:#aaa,stroke-width:2px
     
-    style hive_server fill:#fcf,stroke:#333,stroke-width:2px
-    style hive_metastore fill:#fcf,stroke:#333,stroke-width:2px
-    style postgres fill:#fcf,stroke:#333,stroke-width:2px
+    style hive_server fill:#969,stroke:#aaa,stroke-width:2px
+    style hive_metastore fill:#969,stroke:#aaa,stroke-width:2px
+    style postgres fill:#969,stroke:#aaa,stroke-width:2px
     
-    style spark_app fill:#f99,stroke:#333,stroke-width:2px
-    style historyserver fill:#9cf,stroke:#333,stroke-width:2px
+    style spark_app fill:#933,stroke:#aaa,stroke-width:2px
+    style historyserver fill:#399,stroke:#aaa,stroke-width:2px
 
 ```
 
