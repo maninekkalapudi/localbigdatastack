@@ -29,6 +29,7 @@ services:
       - hadoop_config:/opt/hadoop/etc/hadoop
       - namenode_data:/opt/hadoop/dfs/name
       - ../examples:/opt/hadoop/examples
+      - ..:/opt/hadoop/host
     env_file:
       - ./config/hadoop.env
     networks:
